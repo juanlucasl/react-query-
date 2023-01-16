@@ -1,6 +1,6 @@
 import InfiniteScroll from 'react-infinite-scroller';
-import { Person } from './Person';
 import { useInfiniteQuery } from 'react-query';
+import { Person } from './Person';
 
 const initialUrl = 'https://swapi.dev/api/people/';
 const fetchUrl = async (url) => {
