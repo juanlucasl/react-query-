@@ -13,17 +13,21 @@ function queryErrorHandler(error: unknown): void {
   toast({ title, status: 'error', variant: 'subtle', isClosable: true });
 }
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60000,
-      cacheTime: 90000,
-      refetchOnMount: false,
-      refetchOnReconnect: false,
-      refetchOnWindowFocus: false,
+export function generateQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60000,
+        cacheTime: 90000,
+        refetchOnMount: false,
+        refetchOnReconnect: false,
+        refetchOnWindowFocus: false,
+      },
     },
-  },
-  queryCache: new QueryCache({
-    onError: queryErrorHandler,
-  }),
-});
+    queryCache: new QueryCache({
+      onError: queryErrorHandler,
+    }),
+  });
+}
+
+export const queryClient = generateQueryClient();
