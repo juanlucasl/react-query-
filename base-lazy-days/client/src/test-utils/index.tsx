@@ -1,4 +1,24 @@
-import { render } from '@testing-library/react';
+import { render, RenderResult } from '@testing-library/react';
+import { ReactElement } from 'react';
+import { QueryClient, QueryClientProvider } from 'react-query';
+
+/**
+ * Generates a unique QueryClient for each test.
+ */
+const generateQueryClient = () => {
+  return new QueryClient();
+};
+
+export function renderWithQueryClient(
+  ui: ReactElement,
+  client?: QueryClient,
+): RenderResult {
+  const queryClient = client ?? generateQueryClient();
+
+  return render(
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+  );
+}
 
 // import { defaultQueryClientOptions } from '../react-query/queryClient';
 
