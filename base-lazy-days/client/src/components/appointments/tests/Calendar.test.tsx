@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { rest } from 'msw';
 
 import { server } from '../../../mocks/server';
@@ -26,9 +26,15 @@ describe('Calendar', () => {
 
     renderWithQueryClient(<Calendar />);
 
-    // check for alert toast.
-    const alertToast = await screen.findByRole('alert');
-
-    expect(alertToast).toHaveTextContent(/status code 500/i);
+    // Account for race condition where some machines might run the query
+    // after one toast appears, where others might run after both.
+    // Wait until there are two alerts, one from fetch and one from pre-fetch.
+    await waitFor(() => {
+      const alertToasts = screen.getAllByRole('alert');
+      expect(alertToasts).toHaveLength(2);
+      alertToasts.map((toast) =>
+        expect(toast).toHaveTextContent('Request failed with status code 500'),
+      );
+    });
   });
 });

@@ -16,7 +16,14 @@ setLogger({
  * Generates a unique QueryClient for each test.
  */
 const generateTestQueryClient = () => {
-  return generateQueryClient();
+  const testQueryClient = generateQueryClient();
+  const options = testQueryClient.getDefaultOptions();
+  options.queries = {
+    ...options.queries,
+    retry: false,
+  };
+
+  return testQueryClient;
 };
 
 export function renderWithQueryClient(
