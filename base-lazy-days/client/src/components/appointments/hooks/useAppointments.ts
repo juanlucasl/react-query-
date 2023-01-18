@@ -79,11 +79,15 @@ export function useAppointments(): UseAppointments {
   useEffect(() => {
     // assume increment of one month
     const nextMonthYear = getNewMonthYear(monthYear, 1);
+    // The effect of this pre-fetch is to populate the cache with this
+    // data so that it's there when the user clicks on the next month.
     queryClient.prefetchQuery(
       [queryKeys.appointments, nextMonthYear.year, nextMonthYear.month],
       () => getAppointments(nextMonthYear.year, nextMonthYear.month),
-      // The effect of this pre-fetch is to populate the cache with this
-      // data so that it's there when the user clicks on the next month.
+      {
+        staleTime: 0,
+        cacheTime: 30000,
+      },
     );
   }, [queryClient, monthYear]); // run when monthYear changes.
 
@@ -101,6 +105,12 @@ export function useAppointments(): UseAppointments {
     {
       // If showAll is true, don't even pass a select function to the client
       select: showAll ? undefined : selectAvailableAppointments,
+      staleTime: 0,
+      cacheTime: 30000,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
+      refetchOnWindowFocus: true,
+      refetchInterval: 6000,
     },
   );
 
