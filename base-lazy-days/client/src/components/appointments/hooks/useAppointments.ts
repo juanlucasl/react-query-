@@ -1,6 +1,12 @@
-// @ts-nocheck
 import dayjs from 'dayjs';
-import { Dispatch, SetStateAction, useState } from 'react';
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { useQuery, useQueryClient } from 'react-query';
 
 import { axiosInstance } from '../../../axiosInstance';
 import { queryKeys } from '../../../react-query/constants';
@@ -34,7 +40,7 @@ interface UseAppointments {
 //     2a. return in AppointmentDateMap format (appointment arrays indexed by day of month)
 //     2b. prefetch the appointments for adjacent monthYears
 //   3. track the state of the filter (all appointments / available appointments)
-//     3a. return the only the applicable appointments for the current monthYear
+//     3a. return only the applicable appointments for the current monthYear
 export function useAppointments(): UseAppointments {
   /** ****************** START 1: monthYear state *********************** */
   // get the monthYear for the current date (for default monthYear state)
@@ -55,22 +61,58 @@ export function useAppointments(): UseAppointments {
   const [showAll, setShowAll] = useState(false);
 
   // We will need imported function getAvailableAppointments here
-  // We need the user to pass to getAvailableAppointments so we can show
-  //   appointments that the logged-in user has reserved (in white)
+  // We need the user to pass to getAvailableAppointments, so we can show
+  // appointments that the logged-in user has reserved (in white)
   const { user } = useUser();
+
+  const selectAvailableAppointments = useCallback(
+    (appointments) => getAvailableAppointments(appointments, user),
+    [user],
+  );
 
   /** ****************** END 2: filter appointments  ******************** */
   /** ****************** START 3: useQuery  ***************************** */
   // useQuery call for appointments for the current monthYear
 
-  // TODO: update with useQuery!
+  // prefetch next month when monthYear changes
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    // assume increment of one month
+    const nextMonthYear = getNewMonthYear(monthYear, 1);
+    // The effect of this pre-fetch is to populate the cache with this
+    // data so that it's there when the user clicks on the next month.
+    queryClient.prefetchQuery(
+      [queryKeys.appointments, nextMonthYear.year, nextMonthYear.month],
+      () => getAppointments(nextMonthYear.year, nextMonthYear.month),
+      {
+        staleTime: 0,
+        cacheTime: 30000,
+      },
+    );
+  }, [queryClient, monthYear]); // run when monthYear changes.
+
   // Notes:
   //    1. appointments is an AppointmentDateMap (object with days of month
   //       as properties, and arrays of appointments for that day as values)
   //
   //    2. The getAppointments query function needs monthYear.year and
   //       monthYear.month
-  const appointments = {};
+  const fallback = {};
+
+  const { data: appointments = fallback } = useQuery(
+    [queryKeys.appointments, monthYear.year, monthYear.month],
+    () => getAppointments(monthYear.year, monthYear.month),
+    {
+      // If showAll is true, don't even pass a select function to the client
+      select: showAll ? undefined : selectAvailableAppointments,
+      staleTime: 0,
+      cacheTime: 30000,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
+      refetchOnWindowFocus: true,
+      refetchInterval: 6000,
+    },
+  );
 
   /** ****************** END 3: useQuery  ******************************* */
 
